@@ -7,9 +7,159 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
+model Tenant {
+  id                String            @id @default(uuid()) @map("_id")
+  name              String
+  users             User[] // Usuários (Alunos e Personal Trainers)
+  avaliacoes        AvaliacaoFisica[]
+  treinos           Treino[]
+  exercicios        Exercicio[]
+  rotinas           Rotina[] // Relacionamento com Rotina
+  planos            PlanoUsuario[] // Relacionamento com PlanoUsuario
+  historicosTreinos HistoricoTreino[] // Relacionamento com HistoricoTreino
+  agendas           Agenda[] // Relacionamento com Agenda
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Perfil {
+  ALUNO
+  PERSONAL
+  ADMIN
+}
+
+model User {
+  id              String    @id @default(uuid()) @map("_id")
+  name            String
+  email           String    @unique
+  password        String
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  perfil          Perfil
+  isAdmin         Boolean   @default(false)
+  ativo           Boolean   @default(true)
+  refresh_token   String?
+  resetToken      String?
+  tokenExpiration DateTime?
+  whatsapp        String?
+  dataNascimento  DateTime?
+  genero          String?
+  acessoEmail     Boolean?
+  bloqueado       Boolean?
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Exercicio Exercicio[]
+}
+
+model AvaliacaoFisica {
+  id       String @id @default(uuid()) @map("_id")
+  alunoId  String
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Exercicio {
+  id            String            @id @default(uuid()) @map("_id")
+  nome          String
+  descricao     String?
+  grupoMuscular String
+  videoUrl      String?
+  createdById   String
+  createdBy     User              @relation(fields: [createdById], references: [id])
+  treinos       TreinoExercicio[]
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Treino {
+  id         String            @id @default(uuid()) @map("_id")
+  nome       String
+  objetivo   String?
+  exercicios TreinoExercicio[]
+  tenantId   String
+  tenant     Tenant            @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  HistoricoTreino HistoricoTreino[]
+}
+
+model TreinoExercicio {
+  id          String    @id @default(uuid()) @map("_id")
+  treinoId    String
+  treino      Treino    @relation(fields: [treinoId], references: [id])
+  exercicioId String
+  exercicio   Exercicio @relation(fields: [exercicioId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model HistoricoTreino {
+  id       String @id @default(uuid()) @map("_id")
+  treinoId String
+  treino   Treino @relation(fields: [treinoId], references: [id])
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CANCELADO
+}
+
+model Agendamento {
+  id           String            @id @default(uuid()) @map("_id")
+  agendaId     String
+  agenda       Agenda            @relation(fields: [agendaId], references: [id])
+  status       StatusAgendamento @default(PENDENTE)
+  dataAgendada DateTime
+  confirmadoEm DateTime?
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+}
+
+model Agenda {
+  id       String @id @default(uuid()) @map("_id")
+  nome     String
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Agendamento Agendamento[]
+}
+
+model PlanoUsuario {
+  id       String @id @default(uuid()) @map("_id")
+  nome     String
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Rotina {
+  id        String  @id @default(uuid()) @map("_id")
+  nome      String
+  descricao String?
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
